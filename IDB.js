@@ -26,6 +26,9 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
     .service('IDB', function ($rootScope) {
         var self = this;
 
+        // this is pretty basic stuff for opening up an IndexedDB database
+        // there is a little bit added here to set the options up properly, 
+        // and handle an array of options
         this.openDB = function(dbName, version, options) {
             this.dbName = dbName;
             this.version = version;
@@ -42,20 +45,26 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
             console.log('options', this.options);
 
             var request;
+            // you should always specify a version
+            // I don't think that this method will even work correctly without one
             if (!!this.version)
                 request = indexedDB.open(this.dbName, this.version);
             else
                 request = indexedDB.open(this.dbName);
 
+            // handle the failure case
             request.onerror = function (event) {
                 console.log('failed to open db ' + event);
                 self.failure();
             };
+            // handle the upgrade case
             request.onupgradeneeded = function (event) {
                 console.log('idb upgrade');
                 var db = event.target.result;
                 this.db = db;
                 var opKeys = Object.keys(this.options);
+                // we want to step through the options objects
+                // the db needs to know about all keys and indexes in a store
                 for (var i = 0; i < opKeys.length; i++) {
                     var options = this.options[opKeys[i]];
                     var objectStore;
@@ -89,10 +98,11 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
                 }
                 $rootScope.$emit('dbopenupgrade', [this.dbName, event.target.transaction]);
             }.bind(this);
+            // the success case!
             request.onsuccess = function (event) {
                 this.db = event.target.result;
                 console.log('idb success', this, this.db);
-                //success();
+                // $rootScope.$emit is AngularJS's event emitter
                 $rootScope.$emit('dbopen', [this.dbName]);
             }.bind(this);
 
@@ -119,6 +129,7 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
             });
         }
 
+        // a quick and simple wrapper for getting the transaction store with an optional mode
         this.getTransactionStore = function (storeName, mode) {
             if (!(this.db instanceof IDBDatabase)) {
                 console.log('db', this, this.db);
@@ -192,17 +203,17 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
             cursorRequest.onerror = self.failure;
         };
 
-
+        // for simple get requests by key
         this.getItem = function (storeName, key) {
             var getRequest = this.getTransactionStore(storeName).get(key);
 
             getRequest.onsuccess = function (event) {
-                //success(event.target.result);
                 $rootScope.$emit('getitem', [self.dbName, storeName, event.target.result]);
             };
             getRequest.onerror = self.failure;
         };
 
+        // we're just going to get everything from a given data store
         this.getInit = function (transaction, storeName) {
             var objectStore = transaction.objectStore(storeName);
             var results = [];
@@ -214,13 +225,13 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
                     cursor.continue();
                 }
                 else {
-                    //success(results);
                     $rootScope.$emit('getinit', [self.dbName, storeName, results]);
                 }
             };
             objectStore.onerror = self.failure;
         };
 
+        // similar to getInit, but we don't have a transaction to pass in
         this.getAll = function (storeName) {
             var objectStore = this.getTransactionStore(storeName);
             var results = [];
@@ -232,7 +243,6 @@ angular.module('angular-indexeddb', [ 'ngResource' ])
                     cursor.continue();
                 }
                 else {
-                    //success(results);
                     $rootScope.$emit('getall', [self.dbName, storeName, results]);
                 }
             };
