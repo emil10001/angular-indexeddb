@@ -7,4 +7,4 @@ dist/*
 *.iml
 !0.gitkeep
 node_modules/
-app/bower_components/
+sample_idb_app/app/bower_components/

@@ -1,0 +1,26 @@
+<h3>Add new</h3>
+<div class="row">
+    <form ng-submit="addItem(newItem)">
+        <input type="text" ng-model="newItem.id" size="10" placeholder="id">
+        <input type="text" ng-model="newItem.name" size="20" placeholder="name"><br>
+        <input type="text" ng-model="newItem.param" size="30" placeholder="param">
+        <button class="btn-primary" type="submit">+</button>
+    </form>
+</div>
+<br>
+<div class="jumbotron">
+    <div class="pull-right"><h3><a ng-click="removeAll()">Reset to default</a></h3></div>
+    <br>
+
+    <div class="row marketing">
+        <div ng-repeat="item in listOThings">
+            <h3 class="pull-left">{{ item.name }}</h3>
+
+            <p>id: {{ item.id }}<br>
+                param: {{ item.param }}
+
+                <span class="pull-right"><a ng-click="removeItem(item.id)">X</a></span>
+            </p>
+        </div>
+    </div>
+</div>
